@@ -92,7 +92,7 @@ resource "aws_api_gateway_integration" "post_image_integration" {
     "integration.request.path.imageName" = "method.request.path.imageName"
   }
 
-  content_handling = "CONVERT_TO_BINARY"
+  content_handling     = "CONVERT_TO_BINARY"
   passthrough_behavior = "WHEN_NO_MATCH"
 }
 
