@@ -3,11 +3,6 @@ app: g-celente
 
 service: file-processing-pipeline-lambda
 
-stages:
-  default:
-    params:
-      tableName: "users-table-${sls:stage}"
-
 provider:
   name: aws
   runtime: nodejs20.x
