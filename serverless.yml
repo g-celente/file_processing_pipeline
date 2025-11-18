@@ -1,8 +1,6 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
 org: gcelente
-# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
 app: g-celente
-# "service" is the name of this project. This will also be added to your AWS resource names.
+
 service: file-processing-pipeline-lambda
 
 stages:
@@ -13,41 +11,46 @@ stages:
 provider:
   name: aws
   runtime: nodejs20.x
-  # Uncomment to easily set up a custom domain. Read the docs for more details:
-  # https://www.serverless.com/framework/docs/providers/aws/guide/domains
-  # domain: api.example.com
+  region: us-east-2
+
+  environment:
+    DYNAMO_TABLE: file-metadata-${sls:stage}
+    BUCKET_NAME: gateway-s3-images
+
   iam:
     role:
       statements:
         - Effect: Allow
           Action:
-            - dynamodb:Query
-            - dynamodb:Scan
-            - dynamodb:GetItem
-            - dynamodb:PutItem
-            - dynamodb:UpdateItem
-            - dynamodb:DeleteItem
+            - s3:GetObject
           Resource:
-            - Fn::GetAtt: [UsersTable, Arn]
-  environment:
-    USERS_TABLE: ${param:tableName}
+            - arn:aws:s3:::gateway-s3-images/*
+
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+          Resource:
+            - arn:aws:dynamodb:us-east-2:*:table/file-metadata-${sls:stage}
 
 functions:
-  api:
+  processFile:
     handler: handler.handler
     events:
-      - httpApi: "*"
+      - s3:
+          bucket: gateway-s3-images
+          event: s3:ObjectCreated:*
+          existing: true
 
 resources:
   Resources:
-    UsersTable:
+    FileMetadataTable:
       Type: AWS::DynamoDB::Table
       Properties:
+        TableName: file-metadata-${sls:stage}
+        BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
-          - AttributeName: userId
+          - AttributeName: id
             AttributeType: S
         KeySchema:
-          - AttributeName: userId
+          - AttributeName: id
             KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-        TableName: ${param:tableName}
