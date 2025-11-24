@@ -1,10 +1,12 @@
 resource "aws_api_gateway_rest_api" "gtw_api_files" {
   name = "gtw_api_files"
 
-  binary_media_types = [ # Defines/Handles binary requests appropriately
-    "file/png",
+  binary_media_types = [
+    "image/png",
     "application/pdf",
-    "application/octet-stream"
+    "application/octet-stream",
+    "text/csv",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   ]
 
   endpoint_configuration {
@@ -123,8 +125,20 @@ resource "aws_api_gateway_deployment" "gtw_api_files" {
   rest_api_id = aws_api_gateway_rest_api.gtw_api_files.id
 
   triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.gtw_api_files.body))
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_method.post_file_method.id,
+      aws_api_gateway_integration.post_file_integration.id,
+      aws_api_gateway_method_response.post_file_method_response.id,
+      aws_api_gateway_integration_response.post_file_integration_response.id
+    ]))
   }
+
+  depends_on = [
+    aws_api_gateway_method.post_file_method,
+    aws_api_gateway_integration.post_file_integration,
+    aws_api_gateway_method_response.post_file_method_response,
+    aws_api_gateway_integration_response.post_file_integration_response
+  ]
 
   lifecycle {
     create_before_destroy = true
