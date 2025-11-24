@@ -1,8 +1,8 @@
-resource "aws_api_gateway_rest_api" "gtw_api_images" {
-  name = "gtw_api_images"
+resource "aws_api_gateway_rest_api" "gtw_api_files" {
+  name = "gtw_api_files"
 
   binary_media_types = [ # Defines/Handles binary requests appropriately
-    "image/png",
+    "file/png",
     "application/pdf",
     "application/octet-stream"
   ]
@@ -51,79 +51,79 @@ resource "aws_iam_role_policy" "apigw_s3_policy" {
 # ENDPOINTS API GATEWAY
 # =========================
 
-#Defines path /images
-resource "aws_api_gateway_resource" "images_resource" {
-  rest_api_id = aws_api_gateway_rest_api.gtw_api_images.id
-  parent_id   = aws_api_gateway_rest_api.gtw_api_images.root_resource_id
-  path_part   = "images"
+#Defines path /files
+resource "aws_api_gateway_resource" "files_resource" {
+  rest_api_id = aws_api_gateway_rest_api.gtw_api_files.id
+  parent_id   = aws_api_gateway_rest_api.gtw_api_files.root_resource_id
+  path_part   = "files"
 }
 
-#Defines childern path of images /{imageName}
-resource "aws_api_gateway_resource" "images_resource_object" {
-  rest_api_id = aws_api_gateway_rest_api.gtw_api_images.id
-  parent_id   = aws_api_gateway_resource.images_resource.id
-  path_part   = "{imageName}"
+#Defines childern path of files /{fileName}
+resource "aws_api_gateway_resource" "files_resource_object" {
+  rest_api_id = aws_api_gateway_rest_api.gtw_api_files.id
+  parent_id   = aws_api_gateway_resource.files_resource.id
+  path_part   = "{fileName}"
 }
 
-#Defines POST method for /images/{imageName}
-resource "aws_api_gateway_method" "post_image_method" {
-  rest_api_id   = aws_api_gateway_rest_api.gtw_api_images.id
-  resource_id   = aws_api_gateway_resource.images_resource_object.id
+#Defines POST method for /files/{fileName}
+resource "aws_api_gateway_method" "post_file_method" {
+  rest_api_id   = aws_api_gateway_rest_api.gtw_api_files.id
+  resource_id   = aws_api_gateway_resource.files_resource_object.id
   http_method   = "POST"
   authorization = "NONE"
 
   request_parameters = {
-    "method.request.path.imageName" = true
+    "method.request.path.fileName" = true
   }
 }
 
 #Integrates the POST method with S3 service
-resource "aws_api_gateway_integration" "post_image_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.gtw_api_images.id
-  resource_id             = aws_api_gateway_resource.images_resource_object.id
-  http_method             = aws_api_gateway_method.post_image_method.http_method
+resource "aws_api_gateway_integration" "post_file_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.gtw_api_files.id
+  resource_id             = aws_api_gateway_resource.files_resource_object.id
+  http_method             = aws_api_gateway_method.post_file_method.http_method
   type                    = "AWS"
   integration_http_method = "PUT"
-  uri                     = "arn:aws:apigateway:${var.aws_region}:s3:path/${var.s3_bucket_name}/{imageName}"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:s3:path/${var.s3_bucket_name}/{fileName}"
 
   credentials = aws_iam_role.apigw_s3_role.arn
 
   request_parameters = {
-    "integration.request.path.imageName" = "method.request.path.imageName"
+    "integration.request.path.fileName" = "method.request.path.fileName"
   }
 
   content_handling     = "CONVERT_TO_BINARY"
   passthrough_behavior = "WHEN_NO_MATCH"
 }
 
-resource "aws_api_gateway_method_response" "post_image_method_response" {
-  rest_api_id = aws_api_gateway_rest_api.gtw_api_images.id
-  resource_id = aws_api_gateway_resource.images_resource_object.id
-  http_method = aws_api_gateway_method.post_image_method.http_method
+resource "aws_api_gateway_method_response" "post_file_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.gtw_api_files.id
+  resource_id = aws_api_gateway_resource.files_resource_object.id
+  http_method = aws_api_gateway_method.post_file_method.http_method
   status_code = "200"
 }
 
-resource "aws_api_gateway_integration_response" "post_image_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.gtw_api_images.id
-  resource_id = aws_api_gateway_resource.images_resource_object.id
-  http_method = aws_api_gateway_method.post_image_method.http_method
-  status_code = aws_api_gateway_method_response.post_image_method_response.status_code
+resource "aws_api_gateway_integration_response" "post_file_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.gtw_api_files.id
+  resource_id = aws_api_gateway_resource.files_resource_object.id
+  http_method = aws_api_gateway_method.post_file_method.http_method
+  status_code = aws_api_gateway_method_response.post_file_method_response.status_code
 
   response_templates = {
     "application/json" = ""
   }
 
-  depends_on = [aws_api_gateway_method_response.post_image_method_response]
+  depends_on = [aws_api_gateway_method_response.post_file_method_response]
 }
 
 # =========================
 # DEPLOYMENT AND STAGE CONFIG
 # =========================
-resource "aws_api_gateway_deployment" "gtw_api_images" {
-  rest_api_id = aws_api_gateway_rest_api.gtw_api_images.id
+resource "aws_api_gateway_deployment" "gtw_api_files" {
+  rest_api_id = aws_api_gateway_rest_api.gtw_api_files.id
 
   triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.gtw_api_images.body))
+    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.gtw_api_files.body))
   }
 
   lifecycle {
@@ -131,8 +131,8 @@ resource "aws_api_gateway_deployment" "gtw_api_images" {
   }
 }
 
-resource "aws_api_gateway_stage" "gtw-images-stage" {
-  deployment_id = aws_api_gateway_deployment.gtw_api_images.id
-  rest_api_id   = aws_api_gateway_rest_api.gtw_api_images.id
-  stage_name    = "gtw-images-stage"
+resource "aws_api_gateway_stage" "gtw-files-stage" {
+  deployment_id = aws_api_gateway_deployment.gtw_api_files.id
+  rest_api_id   = aws_api_gateway_rest_api.gtw_api_files.id
+  stage_name    = "gtw-files-stage"
 }

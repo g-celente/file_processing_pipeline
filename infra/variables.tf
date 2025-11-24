@@ -6,6 +6,6 @@ variable "aws_region" {
 
 variable "s3_bucket_name" {
   type        = string
-  default     = "gateway-s3-images"
-  description = "S3 bucket name to store uploaded images"
+  default     = "gateway-s3-files"
+  description = "S3 bucket name to store uploaded files"
 }
