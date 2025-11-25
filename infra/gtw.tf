@@ -2,11 +2,8 @@ resource "aws_api_gateway_rest_api" "gtw_api_files" {
   name = "gtw_api_files"
 
   binary_media_types = [
-    "image/png",
     "application/pdf",
-    "application/octet-stream",
     "text/csv",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   ]
 
   endpoint_configuration {
@@ -98,24 +95,41 @@ resource "aws_api_gateway_integration" "post_file_integration" {
   passthrough_behavior = "WHEN_NO_MATCH"
 }
 
+## DEFINES RESPONSES FOR POST METHOD
 resource "aws_api_gateway_method_response" "post_file_method_response" {
   rest_api_id = aws_api_gateway_rest_api.gtw_api_files.id
   resource_id = aws_api_gateway_resource.files_resource_object.id
   http_method = aws_api_gateway_method.post_file_method.http_method
   status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Content-Type" = true
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
 }
+
 
 resource "aws_api_gateway_integration_response" "post_file_integration_response" {
   rest_api_id = aws_api_gateway_rest_api.gtw_api_files.id
   resource_id = aws_api_gateway_resource.files_resource_object.id
   http_method = aws_api_gateway_method.post_file_method.http_method
-  status_code = aws_api_gateway_method_response.post_file_method_response.status_code
+  status_code = "200"
 
-  response_templates = {
-    "application/json" = ""
+  response_parameters = {
+    "method.response.header.Content-Type" = "'application/json'"
+    "method.response.header.Access-Control-Allow-Origin" = "'*'"
   }
 
-  depends_on = [aws_api_gateway_method_response.post_file_method_response]
+  response_templates = {
+    "application/json" = <<-VTL
+    {
+      "status": "success",
+      "message": "File uploaded successfully",
+      "requestId": "$context.requestId",
+      "timestamp": "$context.requestTime"
+    }
+    VTL
+  }
 }
 
 # =========================
