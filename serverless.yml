@@ -3,6 +3,14 @@ app: g-celente
 
 service: file-processing-pipeline-lambda
 
+package:
+  exclude:
+    - node_modules/**
+    - .gitignore
+    - .git/**
+    - README.md
+    - infra/**
+
 provider:
   name: aws
   runtime: nodejs20.x
