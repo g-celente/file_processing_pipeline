@@ -10,7 +10,7 @@ provider:
 
   environment:
     DYNAMO_TABLE: file-metadata-${sls:stage}
-    BUCKET_NAME: gateway-s3-images
+    BUCKET_NAME: gateway-s3-files
 
   iam:
     role:
@@ -19,7 +19,7 @@ provider:
           Action:
             - s3:GetObject
           Resource:
-            - arn:aws:s3:::gateway-s3-images/*
+            - arn:aws:s3:::gateway-s3-files/*
 
         - Effect: Allow
           Action:
@@ -32,7 +32,7 @@ functions:
     handler: handler.handler
     events:
       - s3:
-          bucket: gateway-s3-images
+          bucket: gateway-s3-files
           event: s3:ObjectCreated:*
           existing: true
 
