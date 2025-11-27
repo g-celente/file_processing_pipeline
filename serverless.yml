@@ -28,7 +28,11 @@ provider:
             - s3:GetObject
           Resource:
             - arn:aws:s3:::gateway-s3-files/*
-
+        - Effect: Allow
+          Action:
+            - s3:ListBucket
+          Resource: arn:aws:s3:::gateway-s3-files
+          
         - Effect: Allow
           Action:
             - dynamodb:PutItem
@@ -37,7 +41,7 @@ provider:
 
 functions:
   processFile:
-    handler: handler.handler
+    handler: src/interface/handler.handler
     events:
       - s3:
           bucket: gateway-s3-files
