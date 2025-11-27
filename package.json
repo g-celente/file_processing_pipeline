@@ -3,6 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/interface/handler.ts",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "deploy": "npm run build && serverless deploy",
+    "test": "jest",
+    "type-check": "tsc --noEmit"
+  },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.933.0",
     "@aws-sdk/client-s3": "^3.933.0",
@@ -12,6 +21,11 @@
     "serverless-http": "^3.2.0"
   },
   "devDependencies": {
-    "serverless-offline": "^14.4.0"
+    "@types/aws-lambda": "^8.10.159",
+    "@types/node": "^24.10.1",
+    "@types/papaparse": "^5.5.0",
+    "serverless-offline": "^14.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
