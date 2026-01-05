@@ -71,9 +71,17 @@ resource "aws_api_gateway_method" "post_file_method" {
   http_method   = "POST"
   authorization = "NONE"
 
+  request_validator_id = aws_api_gateway_request_validator.csv_validator.id
+
   request_parameters = {
     "method.request.path.fileName" = true
   }
+}
+
+resource "aws_api_gateway_request_validator" "csv_validator" {
+  name                        = "csv-file-validator"
+  rest_api_id                 = aws_api_gateway_rest_api.gtw_api_files.id
+  validate_request_parameters = true
 }
 
 #Integrates the POST method with S3 service
@@ -129,6 +137,19 @@ resource "aws_api_gateway_integration_response" "post_file_integration_response"
       "timestamp": "$context.requestTime"
     }
     VTL
+  }
+}
+
+resource "aws_api_gateway_gateway_response" "bad_request" {
+  rest_api_id   = aws_api_gateway_rest_api.gtw_api_files.id
+  response_type = "BAD_REQUEST_BODY"
+  status_code   = "400"
+
+  response_templates = {
+    "application/json" = jsonencode({
+      message = "Only .csv files are allowed"
+      error   = "INVALID_FILE_TYPE"
+    })
   }
 }
 
