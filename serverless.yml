@@ -19,6 +19,7 @@ provider:
   environment:
     DYNAMO_TABLE: file-metadata-${sls:stage}
     BUCKET_NAME: gateway-s3-files
+    DLQ_URL: !Ref ProcessingDLQ  
 
   iam:
     role:
@@ -26,18 +27,28 @@ provider:
         - Effect: Allow
           Action:
             - s3:GetObject
+            - s3:PutObject     
+            - s3:CopyObject     
           Resource:
             - arn:aws:s3:::gateway-s3-files/*
         - Effect: Allow
           Action:
             - s3:ListBucket
           Resource: arn:aws:s3:::gateway-s3-files
-          
         - Effect: Allow
           Action:
             - dynamodb:PutItem
           Resource:
             - arn:aws:dynamodb:us-east-2:*:table/file-metadata-${sls:stage}
+
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - !GetAtt ProcessingDLQ.Arn
 
 functions:
   processFile:
@@ -47,6 +58,14 @@ functions:
           bucket: gateway-s3-files
           event: s3:ObjectCreated:*
           existing: true
+
+  processDLQ:
+    handler: src/interface/dlqHandler.handler
+    timeout: 60
+    events:
+      - sqs:
+          arn: !GetAtt ProcessingDLQ.Arn
+          batchSize: 5
 
 resources:
   Resources:
@@ -61,3 +80,10 @@ resources:
         KeySchema:
           - AttributeName: id
             KeyType: HASH
+
+    ProcessingDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: file-processing-dlq-${sls:stage}
+        MessageRetentionPeriod: 1209600  
+        VisibilityTimeout: 300           

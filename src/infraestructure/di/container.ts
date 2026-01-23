@@ -2,7 +2,7 @@ import { ProcessSalesReportUseCase } from "../../applications/ProcessSalesReport
 import { DynamoMetadaRepository } from "../dynamodb/DynamoMetadataRepository";
 import { SalesReportParser } from "../parsers/SalesReportParser";
 import { S3FileReader } from "../s3/S3FileReader";
-
+import { DeadLetterQueueService } from "../sqs/DeadLetterQueueService";
 
 /**
  * Container: Implement Container de Injeção de Dependências
@@ -13,6 +13,7 @@ export class Container {
     private static s3FileReader: S3FileReader;
     private static salesProcessUseCase: ProcessSalesReportUseCase;
     private static dynamoMetadataRepository: DynamoMetadaRepository;
+    private static dlqService: DeadLetterQueueService; 
     
     private constructor() {
 
@@ -48,5 +49,12 @@ export class Container {
         }
 
         return this.dynamoMetadataRepository;
+    }
+
+    static getDeadLetterQueueService(): DeadLetterQueueService {
+        if (!this.dlqService) {
+            this.dlqService = new DeadLetterQueueService();
+        }
+        return this.dlqService;
     }
 }
